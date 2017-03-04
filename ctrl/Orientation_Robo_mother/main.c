@@ -1,4 +1,4 @@
-//	2016年度メイド・イン・くしろ ロボット用プログラム
+//	2017年度新入生オリエンテーション用制御回路プログラム
 
 #include <16F886.h>
 #fuses INTRC_IO,NOWDT,NOPROTECT,PUT,NOMCLR,NOLVP,BROWNOUT
@@ -18,14 +18,10 @@
 #include "ps_key_defines.h"
 
 //設定項目--------------
-#define ROBO_A
-	//コンパイル制御による制御プログラムの選択
-	//ロボット1はROBO_A
-	//ロボット2はROBO_B
-	//ロボット3はROBO_C
-	//と定義することでそれぞれに対応したプログラムになる
 #define MOTOR_MOVER	'R'
 #define MOTOR_MOVEL	'L'
+#define MOTOR_AIR	'A'
+#define MOTOR_ROLL	'B'
 
 #define BUFFER_SIZE 16
 
@@ -264,6 +260,8 @@ void main(){
 				RD= Data[2+ofs];
 				movev=((RD&UP)?1:0) - ((RD&DOWN)?1:0);	//方向キー上下
 				mover=((RD&LEFT)?1:0) - ((RD&RIGHT)?1:0);	//方向キー左右
+				RD= Data[3+ofs];
+				air=(RD&CIR)?1:0;
 			}
 		} else {
 		//PSコントローラから信号を受信できなかった時の処理
@@ -290,6 +288,8 @@ void main(){
 			pwL= 0;
 			pwR= 0;
 		}
+		pwA= air? 100: 0;
+		pwB= 0;
 
 
 	//LED点灯制御
@@ -319,6 +319,12 @@ void main(){
 				motor_emit(MOTOR_MOVEL, pwL);
 				motor_emit(MOTOR_MOVER, pwR);
 				motor_buf= (movev||mover)?motor_buf|0x01:motor_buf&(0xFF-0x01);
+			}
+			if(air || (motor_buf&0x02))
+			{
+				motor_emit(MOTOR_AIR, pwA);
+				motor_emit(MOTOR_ROLL, pwB);
+				motor_buf= (air)?motor_buf|0x02:motor_buf&(0xFF-0x02);
 			}
 		} else {
 			motor_emit(MOTOR_MOVEL, 0);

@@ -17,6 +17,13 @@
 #byte INTCON = 0x0B
 #include "ps_key_defines.h"
 
+/*操作説明
+	R1トリガ		- 誤操作防止ロック解除(押している間のみ操作できます)
+	方向キー上下	- 前後移動
+	方向キー左右	- 左右旋回
+	○ボタン		- エアシリンダ駆動
+	△ボタン		- ウインチ巻き上げ
+*/
 //設定項目--------------
 #define MOTOR_MOVER	'R'
 #define MOTOR_MOVEL	'L'
@@ -25,14 +32,14 @@
 
 #define BUFFER_SIZE 16
 
-//#define TIME_MOTOR_MARGIN 5200
 #define TIME_MOTOR_MARGIN 9000
 	//モータードライバに信号を送信した直後の待ち時間
 	//あまり小さい時間に設定しないこと!
 #define F_TIME 200
 	//LED試験点灯のLED点灯時間
-#define MOTOR_LEVEL_R 100
-#define MOTOR_LEVEL_L 100
+#define MOTOR_LEVEL_R 50
+#define MOTOR_LEVEL_L 50
+#define MOTOR_LEVEL_WIND 100
 	//モータードライバ出力レベル
 
 #define RCV_THRESHOLD 3
@@ -197,8 +204,10 @@ void main(){
 			//移動関連の情報を保持する変数
 		armv =0, armh=0,
 			//アームの昇降、開閉情報を保持する変数
-		air =0
+		air =0,
 			//エアシリンダの情報を格納する変数
+		wind =0
+			//ウインチの状態を格納する変数
 	;
 	unsigned char
 		Data[BUFFER_SIZE],
@@ -242,7 +251,7 @@ void main(){
 		pwA= 0;	pwB= 0;	pwC= 0;	pwD= 0;	pwL= 0;	pwR= 0;
 		movev= 0;	mover= 0;
 		armv= 0;	armh= 0;	mode= 0;
-		air= 0;		swstat= 0;
+		air= 0;	wind= 0;		swstat= 0;
 		fb++;	if(fb>=2) fb= 0;
 
 	//PSコントローラのデータ処理
@@ -262,6 +271,7 @@ void main(){
 				mover=((RD&LEFT)?1:0) - ((RD&RIGHT)?1:0);	//方向キー左右
 				RD= Data[3+ofs];
 				air=(RD&CIR)?1:0;
+				wind=(RD&TRI)?1:0;
 			}
 		} else {
 		//PSコントローラから信号を受信できなかった時の処理
@@ -289,7 +299,7 @@ void main(){
 			pwR= 0;
 		}
 		pwA= air? 100: 0;
-		pwB= 0;
+		pwB= wind? MOTOR_LEVEL_WIND: 0;
 
 
 	//LED点灯制御
@@ -324,7 +334,7 @@ void main(){
 			{
 				motor_emit(MOTOR_AIR, pwA);
 				motor_emit(MOTOR_ROLL, pwB);
-				motor_buf= (air)?motor_buf|0x02:motor_buf&(0xFF-0x02);
+				motor_buf= (air||wind)?motor_buf|0x02:motor_buf&(0xFF-0x02);
 			}
 		} else {
 			motor_emit(MOTOR_MOVEL, 0);

@@ -23,6 +23,7 @@
 	方向キー左右	- 左右旋回
 	○ボタン		- エアシリンダ駆動
 	△ボタン		- ウインチ巻き上げ
+	□ボタン		- ウインチ巻き戻し
 */
 //設定項目--------------
 #define MOTOR_MOVER	'R'
@@ -47,7 +48,7 @@
 #define LED_PULLUP 1
 #define LED_OPR	PIN_A0
 #define LED_F1	PIN_A2
-#define EMITRULE_LED_F1 (rcv)&&(!(pwL||pwR))
+#define EMITRULE_LED_F1 (rcv)&&(!(pwL||pwR||air||wind))
 	//LED(緑)点灯の条件
 
 #define ANALOG_THRESHOLD 30
@@ -271,7 +272,7 @@ void main(){
 				mover=((RD&LEFT)?1:0) - ((RD&RIGHT)?1:0);	//方向キー左右
 				RD= Data[3+ofs];
 				air=(RD&CIR)?1:0;
-				wind=(RD&TRI)?1:0;
+				wind=((RD&TRI)?1:0) - ((RD&SQU)?1:0);
 			}
 		} else {
 		//PSコントローラから信号を受信できなかった時の処理
@@ -299,7 +300,7 @@ void main(){
 			pwR= 0;
 		}
 		pwA= air? 100: 0;
-		pwB= wind? MOTOR_LEVEL_WIND: 0;
+		pwB= wind? MOTOR_LEVEL_WIND*wind: 0;
 
 
 	//LED点灯制御

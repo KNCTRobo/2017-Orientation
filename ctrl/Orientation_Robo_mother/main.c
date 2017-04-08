@@ -300,7 +300,14 @@ void main(){
 			pwR= 0;
 		}
 		pwA= air? 100: 0;
-		pwB= wind? MOTOR_LEVEL_WIND*wind: 0;
+		if(wind)
+		{
+			pwB= MOTOR_LEVEL_WIND * wind;
+		}
+		else
+		{
+			pwB= 0;
+		}
 
 
 	//LED点灯制御
@@ -331,7 +338,7 @@ void main(){
 				motor_emit(MOTOR_MOVER, pwR);
 				motor_buf= (movev||mover)?motor_buf|0x01:motor_buf&(0xFF-0x01);
 			}
-			if(air || (motor_buf&0x02))
+			if(air || wind || (motor_buf&0x02))
 			{
 				motor_emit(MOTOR_AIR, pwA);
 				motor_emit(MOTOR_ROLL, pwB);
